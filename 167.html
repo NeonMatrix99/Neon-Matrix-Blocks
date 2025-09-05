@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Matrix Blocks</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #00ff66;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    /* CRT Screen Effect */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      z-index: 10;
+      pointer-events: none;
+      background-size: 100% 2px, 3px 100%;
+    }
+    
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.05);
+      opacity: 0.15;
+      z-index: 10;
+      pointer-events: none;
+      animation: flicker 0.15s infinite;
+    }
+    
+    @keyframes flicker {
+      0% { opacity: 0.15; }
+      5% { opacity: 0.2; }
+      10% { opacity: 0.12; }
+      15% { opacity: 0.18; }
+      20% { opacity: 0.16; }
+      25% { opacity: 0.14; }
+      30% { opacity: 0.17; }
+      35% { opacity: 0.19; }
+      40% { opacity: 0.13; }
+      45% { opacity: 0.16; }
+      50% { opacity: 0.14; }
+      55% { opacity: 0.13; }
+      60% { opacity: 0.17; }
+      65% { opacity: 0.19; }
+      70% { opacity: 0.16; }
+      75% { opacity: 0.14; }
+      80% { opacity: 0.18; }
+      85% { opacity: 0.15; }
+      90% { opacity: 0.16; }
+      95% { opacity: 0.14; }
+      100% { opacity: 0.15; }
+    }
+    
+    #game-container {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      padding: 20px;
+      border: 2px solid #00ff66;
+      border-radius: 5px;
+      box-shadow: 0 0 10px #00ff66, inset 0 0 10px #00ff66;
+      background: #001100;
+      overflow: hidden;
+    }
+    
+    #game-container::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, rgba(0, 255, 102, 0.1) 0%, transparent 5%, transparent 95%, rgba(0, 255, 102, 0.1) 100%);
+      pointer-events: none;
+    }
+    
+    #screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    .screen-content {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 400px;
+      text-align: center;
+    }
+    
+    #main-menu {
+      display: flex;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 2rem;
+      text-shadow: 0 0 10px #00ff66, 0 0 20px #00ff66;
+      letter-spacing: 4px;
+    }
+    
+    .menu-title {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 0 5px #00ff66;
+    }
+    
+    .btn {
+      background: transparent;
+      color: #00ff66;
+      border: 1px solid #00ff66;
+      padding: 10px 20px;
+      margin: 8px 0;
+      width: 200px;
+      font-family: 'Courier New', monospace;
+      font-size: 1.2rem;
+      cursor: pointer;
+      text-shadow: 0 0 5px #00ff66;
+      box-shadow: 0 0 5px #00ff66;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn:hover, .btn:focus {
+      background: rgba(0, 255, 102, 0.2);
+      box-shadow: 0 0 15px #00ff66;
+    }
+    
+    .btn:active {
+      transform: translateY(2px);
+    }
+    
+    .btn::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 102, 0.4), transparent);
+      transition: 0.5s;
+    }
+    
+    .btn:hover::after {
+      left: 100%;
+    }
+    
+    #game-ui {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    #stats {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 10px;
+      font-size: 1.2rem;
+    }
+    
+    #game {
+      line-height: 1.1;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      margin: 10px 0;
+      text-shadow: 0 0 5px #00ff66, 0 0 10px #00ff66;
+    }
+    
+    #next-piece {
+      margin: 10px 0;
+      font-size: 1rem;
+    }
+    
+    #mobile-controls {
+      display: none;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 10px;
+    }
+    
+    .control-btn {
+      width: 70px;
+      height: 70px;
+      background: rgba(0, 255, 102, 0.1);
+      border: 1px solid #00ff66;
+      color: #00ff66;
+      font-size: 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 5px #00ff66;
+      user-select: none;
+    }
+    
+    .control-btn:active {
+      background: rgba(0, 255, 102, 0.3);
+    }
+    
+    #rotate-btn {
+      width: 150px;
+    }
+    
+    .info-text {
+      margin: 10px 0;
+      line-height: 1.5;
+      max-width: 400px;
+    }
+    
+    .settings-group {
+      margin: 15px 0;
+      width: 100%;
+    }
+    
+    .theme-option {
+      display: flex;
+      align-items: center;
+      margin: 10px 0;
+      cursor: pointer;
+    }
+    
+    .theme-preview {
+      width: 30px;
+      height: 30px;
+      border: 1px solid;
+      margin-right: 10px;
+      border-radius: 3px;
+    }
+    
+    .green-theme { background: #001100; border-color: #00ff66; box-shadow: 0 0 5px #00ff66; }
+    .blue-theme { background: #000822; border-color: #0088ff; box-shadow: 0 0 5px #0088ff; }
+    .amber-theme { background: #221100; border-color: #ffaa00; box-shadow: 0 0 5px #ffaa00; }
+    
+    .shop-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid #00ff66;
+      margin: 10px 0;
+      background: rgba(0, 0, 0, 0.3);
+    }
+    
+    .shop-item-info {
+      flex: 1;
+    }
+    
+    .shop-item-btn {
+      padding: 5px 10px;
+      background: transparent;
+      color: #00ff66;
+      border: 1px solid #00ff66;
+      cursor: pointer;
+    }
+    
+    .shop-item-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .active-powerup {
+      color: #ffaa00;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+    
+    /* Responsive styles */
+    @media (max-width: 600px) {
+      #game-container {
+        padding: 10px;
+        margin: 10px;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .btn {
+        width: 180px;
+        font-size: 1rem;
+      }
+      
+      #mobile-controls {
+        display: flex;
+      }
+      
+      #stats {
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+      }
+    }
+    
+    @media (max-width: 400px) {
+      .control-btn {
+        width: 60px;
+        height: 60px;
+      }
+      
+      #rotate-btn {
+        width: 130px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="screen">
+      <!-- Main Menu Screen -->
+      <div id="main-menu" class="screen-content">
+        <h1>FALL BLOCK</h1>
+        <button class="btn" onclick="showScreen('game-screen')">START GAME</button>
+        <button class="btn" onclick="showScreen('controls-screen')">CONTROLS</button>
+        <button class="btn" onclick="showScreen('settings-screen')">SETTINGS</button>
+        <button class="btn" onclick="showScreen('shop-screen')">SHOP</button>
+        <button class="btn" onclick="showScreen('highscores-screen')">HIGH SCORES</button>
+      </div>
+      
+      <!-- Game Screen -->
+      <div id="game-screen" class="screen-content">
+        <div id="stats">
+          <div id="score">SCORE: 0</div>
+          <div id="coins">COINS: 0</div>
+        </div>
+        <div id="game"></div>
+        <div id="next-piece">NEXT: </div>
+        <div id="active-powerups"></div>
+        <div id="mobile-controls">
+          <div class="control-btn" id="left-btn">←</div>
+          <div class="control-btn" id="rotate-btn">↻</div>
+          <div class="control-btn" id="right-btn">→</div>
+          <div class="control-btn" id="down-btn">↓</div>
+        </div>
+        <button class="btn" style="margin-top: 20px;" onclick="pauseGame()">PAUSE</button>
+      </div>
+      
+      <!-- Controls Screen -->
+      <div id="controls-screen" class="screen-content">
+        <h2 class="menu-title">CONTROLS</h2>
+        <div class="info-text">
+          <p>← → : Move Left/Right</p>
+          <p>↑ : Rotate Piece</p>
+          <p>↓ : Soft Drop</p>
+          <p>Space : Hard Drop</p>
+          <p>P : Pause Game</p>
+        </div>
+        <div class="info-text" style="margin-top: 20px;">
+          <p>On Mobile: Use touch buttons</p>
+        </div>
+        <button class="btn" style="margin-top: 20px;" onclick="showScreen('main-menu')">BACK</button>
+      </div>
+      
+      <!-- Settings Screen -->
+      <div id="settings-screen" class="screen-content">
+        <h2 class="menu-title">SETTINGS</h2>
+        
+        <div class="settings-group">
+          <h3>THEME</h3>
+          <div class="theme-option" onclick="changeTheme('green')">
+            <div class="theme-preview green-theme"></div>
+            <div>Green CRT</div>
+          </div>
+          <div class="theme-option" onclick="changeTheme('blue')">
+            <div class="theme-preview blue-theme"></div>
+            <div>Blue Neon</div>
+          </div>
+          <div class="theme-option" onclick="changeTheme('amber')">
+            <div class="theme-preview amber-theme"></div>
+            <div>Amber Retro</div>
+          </div>
+        </div>
+        
+        <div class="settings-group">
+          <h3>GAME SPEED</h3>
+          <button class="btn" onclick="changeSpeed('normal')">NORMAL</button>
+          <button class="btn" onclick="changeSpeed('fast')">FAST</button>
+        </div>
+        
+        <button class="btn" style="margin-top: 20px;" onclick="showScreen('main-menu')">BACK</button>
+      </div>
+      
+      <!-- Shop Screen -->
+      <div id="shop-screen" class="screen-content">
+        <h2 class="menu-title">SHOP</h2>
+        <div id="shop-coins">Your Coins: 0</div>
+        
+        <div class="shop-item">
+          <div class="shop-item-info">
+            <h3>Slow Fall (20s)</h3>
+            <p>Pieces fall slower for 20 seconds</p>
+            <p>Cost: 50 coins</p>
+          </div>
+          <button class="shop-item-btn" onclick="buyPowerup('slowFall')">BUY</button>
+        </div>
+        
+        <div class="shop-item">
+          <div class="shop-item-info">
+            <h3>Double Score (30s)</h3>
+            <p>Earn double points for 30 seconds</p>
+            <p>Cost: 75 coins</p>
+          </div>
+          <button class="shop-item-btn" onclick="buyPowerup('doubleScore')">BUY</button>
+        </div>
+        
+        <button class="btn" style="margin-top: 20px;" onclick="showScreen('main-menu')">BACK</button>
+      </div>
+      
+      <!-- High Scores Screen -->
+      <div id="highscores-screen" class="screen-content">
+        <h2 class="menu-title">HIGH SCORES</h2>
+        <div id="highscores-list"></div>
+        <button class="btn" style="margin-top: 20px;" onclick="showScreen('main-menu')">BACK</button>
+      </div>
+      
+      <!-- Pause Screen -->
+      <div id="pause-screen" class="screen-content">
+        <h2 class="menu-title">PAUSED</h2>
+        <button class="btn" onclick="resumeGame()">RESUME</button>
+        <button class="btn" onclick="quitGame()">QUIT TO MENU</button>
+      </div>
+      
+      <!-- Game Over Screen -->
+      <div id="gameover-screen" class="screen-content">
+        <h2 class="menu-title">GAME OVER</h2>
+        <div id="final-score">SCORE: 0</div>
+        <div id="coins-earned">COINS EARNED: 0</div>
+        <button class="btn" onclick="restartGame()">PLAY AGAIN</button>
+        <button class="btn" onclick="quitGame()">MAIN MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Game constants and variables
+    const rows = 20, cols = 10;
+    let grid = Array.from({length: rows}, () => Array(cols).fill(0));
+    let score = 0;
+    let coins = 0;
+    let gameSpeed = 500;
+    let gameInterval;
+    let isPaused = false;
+    let isGameOver = false;
+    let nextPiece = null;
+    let activePowerups = {};
+    
+    // Load saved data
+    function loadSavedData() {
+      const savedCoins = localStorage.getItem('tetrisCoins');
+      const savedHighScores = localStorage.getItem('tetrisHighScores');
+      const savedTheme = localStorage.getItem('tetrisTheme');
+      const savedSpeed = localStorage.getItem('tetrisSpeed');
+      
+      if (savedCoins) coins = parseInt(savedCoins);
+      if (savedHighScores) highScores = JSON.parse(savedHighScores);
+      if (savedTheme) changeTheme(savedTheme, false);
+      if (savedSpeed) changeSpeed(savedSpeed, false);
+      
+      updateCoinDisplay();
+    }
+    
+    // High scores
+    let highScores = [];
+    
+    // Tetromino shapes
+    const shapes = [
+      [[1,1,1,1]],                     // I
+      [[1,1],[1,1]],                   // O
+      [[0,1,0],[1,1,1]],               // T
+      [[1,0,0],[1,1,1]],               // L
+      [[0,0,1],[1,1,1]],               // J
+      [[0,1,1],[1,1,0]],               // S
+      [[1,1,0],[0,1,1]]                // Z
+    ];
+    
+    // Current piece and position
+    let piece = randomPiece();
+    let pos = {x: 3, y: 0};
+    
+    // Initialize next piece
+    function initNextPiece() {
+      nextPiece = randomPiece();
+      updateNextPieceDisplay();
+    }
+    
+    // Generate random piece
+    function randomPiece() {
+      return shapes[Math.floor(Math.random() * shapes.length)];
+    }
+    
+    // Rotate piece
+    function rotate(matrix) {
+      const numRows = matrix.length;
+      const numCols = matrix[0].length;
+      const result = Array.from({length: numCols}, () => Array(numRows).fill(0));
+      
+      for (let r = 0; r < numRows; r++) {
+        for (let c = 0; c < numCols; c++) {
+          result[c][numRows - 1 - r] = matrix[r][c];
+        }
+      }
+      
+      return result;
+    }
+    
+    // Draw game
+    function draw() {
+      let display = "";
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (grid[r][c]) {
+            display += "[]";
+          } else if (pieceAt(r, c)) {
+            display += "[]";
+          } else {
+            display += " .";
+          }
+        }
+        display += "\n";
+      }
+      document.getElementById("game").innerText = display;
+      document.getElementById("score").innerText = "SCORE: " + score;
+      updateCoinDisplay();
+    }
+    
+    // Check if piece is at position
+    function pieceAt(r, c) {
+      for (let pr = 0; pr < piece.length; pr++) {
+        for (let pc = 0; pc < piece[0].length; pc++) {
+          if (piece[pr][pc]) {
+            if (r === pos.y + pr && c === pos.x + pc) return true;
+          }
+        }
+      }
+      return false;
+    }
+    
+    // Check for collision
+    function collide(newPos = pos, newPiece = piece) {
+      for (let pr = 0; pr < newPiece.length; pr++) {
+        for (let pc = 0; pc < newPiece[0].length; pc++) {
+          if (newPiece[pr][pc]) {
+            let r = newPos.y + pr;
+            let c = newPos.x + pc;
+            if (r >= rows || c < 0 || c >= cols || (r >= 0 && grid[r][c])) return true;
+          }
+        }
+      }
+      return false;
+    }
+    
+    // Merge piece with grid
+    function merge() {
+      for (let pr = 0; pr < piece.length; pr++) {
+        for (let pc = 0; pc < piece[0].length; pc++) {
+          if (piece[pr][pc]) {
+            if (pos.y + pr >= 0) { // Only merge if the row is valid
+              grid[pos.y + pr][pos.x + pc] = 1;
+            }
+          }
+        }
+      }
+    }
+    
+    // Clear completed lines
+    function clearLines() {
+      let linesCleared = 0;
+      for (let r = rows - 1; r >= 0; r--) {
+        if (grid[r].every(cell => cell)) {
+          grid.splice(r, 1);
+          grid.unshift(Array(cols).fill(0));
+          linesCleared++;
+          r++; // Check the same row again
+        }
+      }
+      
+      if (linesCleared > 0) {
+        // Calculate score based on lines cleared and active powerups
+        const basePoints = [0, 100, 300, 500, 800]; // 0, 1, 2, 3, 4 lines
+        let points = basePoints[linesCleared] || 1000;
+        
+        // Double points if powerup is active
+        if (activePowerups.doubleScore) {
+          points *= 2;
+        }
+        
+        score += points;
+        
+        // Award coins
+        const coinsEarned = linesCleared * 10;
+        coins += coinsEarned;
+        updateCoinDisplay();
+        saveCoins();
+      }
+    }
+    
+    // Drop piece
+    function drop() {
+      if (isPaused || isGameOver) return;
+      
+      let newPos = {x: pos.x, y: pos.y + 1};
+      if (!collide(newPos)) {
+        pos = newPos;
+      } else {
+        merge();
+        clearLines();
+        piece = nextPiece || randomPiece();
+        initNextPiece();
+        pos = {x: 3, y: 0};
+        
+        if (collide()) {
+          gameOver();
+        }
+      }
+      draw();
+    }
+    
+    // Hard drop
+    function hardDrop() {
+      if (isPaused || isGameOver) return;
+      
+      let newPos = {x: pos.x, y: pos.y};
+      while (!collide({x: newPos.x, y: newPos.y + 1})) {
+        newPos.y++;
+      }
+      pos = newPos;
+      drop(); // Force the piece to merge
+    }
+    
+    // Update next piece display
+    function updateNextPieceDisplay() {
+      if (!nextPiece) return;
+      
+      let display = "NEXT: ";
+      const size = 4; // Display area size
+      
+      // Create a mini grid for the next piece
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (r < nextPiece.length && c < nextPiece[0].length && nextPiece[r][c]) {
+            display += "[]";
+          } else {
+            display += "  ";
+          }
+        }
+        display += "\n       ";
+      }
+      
+      document.getElementById("next-piece").innerText = display;
+    }
+    
+    // Update coin display
+    function updateCoinDisplay() {
+      document.getElementById("coins").innerText = "COINS: " + coins;
+      document.getElementById("shop-coins").innerText = "Your Coins: " + coins;
+    }
+    
+    // Save coins to localStorage
+    function saveCoins() {
+      localStorage.setItem('tetrisCoins', coins.toString());
+    }
+    
+    // Save high scores to localStorage
+    function saveHighScores() {
+      localStorage.setItem('tetrisHighScores', JSON.stringify(highScores));
+    }
+    
+    // Game over
+    function gameOver() {
+      isGameOver = true;
+      clearInterval(gameInterval);
+      
+      // Add to high scores
+      highScores.push(score);
+      highScores.sort((a, b) => b - a);
+      highScores = highScores.slice(0, 5); // Keep only top 5
+      saveHighScores();
+      
+      // Calculate coins earned this game
+      const coinsEarned = Math.floor(score / 10);
+      coins += coinsEarned;
+      saveCoins();
+      
+      document.getElementById("final-score").innerText = "SCORE: " + score;
+      document.getElementById("coins-earned").innerText = "COINS EARNED: " + coinsEarned;
+      
+      showScreen("gameover-screen");
+    }
+    
+    // Start game
+    function startGame() {
+      // Reset game state
+      grid = Array.from({length: rows}, () => Array(cols).fill(0));
+      score = 0;
+      piece = randomPiece();
+      pos = {x: 3, y: 0};
+      isPaused = false;
+      isGameOver = false;
+      activePowerups = {};
+      
+      initNextPiece();
+      updateActivePowerupsDisplay();
+      
+      // Clear any existing interval
+      if (gameInterval) clearInterval(gameInterval);
+      
+      // Set up new game interval
+      let speed = gameSpeed;
+      if (activePowerups.slowFall) {
+        speed *= 1.5; // Slow down if powerup is active
+      }
+      
+      gameInterval = setInterval(() => {
+        drop();
+      }, speed);
+      
+      draw();
+      showScreen("game-screen");
+    }
+    
+    // Pause game
+    function pauseGame() {
+      isPaused = true;
+      clearInterval(gameInterval);
+      showScreen("pause-screen");
+    }
+    
+    // Resume game
+    function resumeGame() {
+      isPaused = false;
+      
+      // Set up new game interval with current speed
+      let speed = gameSpeed;
+      if (activePowerups.slowFall) {
+        speed *= 1.5;
+      }
+      
+      gameInterval = setInterval(() => {
+        drop();
+      }, speed);
+      
+      showScreen("game-screen");
+    }
+    
+    // Quit game
+    function quitGame() {
+      clearInterval(gameInterval);
+      showScreen("main-menu");
+    }
+    
+    // Restart game
+    function restartGame() {
+      startGame();
+    }
+    
+    // Show specific screen
+    function showScreen(screenId) {
+      // Hide all screens
+      const screens = document.querySelectorAll('.screen-content');
+      screens.forEach(screen => {
+        screen.style.display = 'none';
+      });
+      
+      // Show requested screen
+      document.getElementById(screenId).style.display = 'flex';
+      
+      // Special handling for certain screens
+      if (screenId === 'highscores-screen') {
+        displayHighScores();
+      }
+    }
+    
+    // Display high scores
+    function displayHighScores() {
+      const list = document.getElementById('highscores-list');
+      list.innerHTML = '';
+      
+      if (highScores.length === 0) {
+        list.innerHTML = '<p>No scores yet!</p>';
+        return;
+      }
+      
+      highScores.forEach((score, index) => {
+        const scoreElement = document.createElement('p');
+        scoreElement.textContent = `${index + 1}. ${score}`;
+        list.appendChild(scoreElement);
+      });
+    }
+    
+    // Change theme
+    function changeTheme(theme, save = true) {
+      const root = document.documentElement;
+      
+      switch(theme) {
+        case 'blue':
+          document.body.style.color = '#0088ff';
+          document.getElementById('game-container').style.borderColor = '#0088ff';
+          document.getElementById('game-container').style.boxShadow = '0 0 10px #0088ff, inset 0 0 10px #0088ff';
+          document.getElementById('game-container').style.background = '#000822';
+          break;
+        case 'amber':
+          document.body.style.color = '#ffaa00';
+          document.getElementById('game-container').style.borderColor = '#ffaa00';
+          document.getElementById('game-container').style.boxShadow = '0 0 10px #ffaa00, inset 0 0 10px #ffaa00';
+          document.getElementById('game-container').style.background = '#221100';
+          break;
+        default: // green
+          document.body.style.color = '#00ff66';
+          document.getElementById('game-container').style.borderColor = '#00ff66';
+          document.getElementById('game-container').style.boxShadow = '0 0 10px #00ff66, inset 0 0 10px #00ff66';
+          document.getElementById('game-container').style.background = '#001100';
+      }
+      
+      // Update buttons
+      const buttons = document.querySelectorAll('.btn, .control-btn, .shop-item-btn');
+      buttons.forEach(btn => {
+        btn.style.color = document.body.style.color;
+        btn.style.borderColor = document.body.style.color;
+        btn.style.boxShadow = `0 0 5px ${document.body.style.color}`;
+      });
+      
+      // Update text shadows
+      const textElements = document.querySelectorAll('h1, h2, h3, #game, #next-piece');
+      textElements.forEach(el => {
+        el.style.textShadow = `0 0 5px ${document.body.style.color}, 0 0 10px ${document.body.style.color}`;
+      });
+      
+      if (save) {
+        localStorage.setItem('tetrisTheme', theme);
+      }
+    }
+    
+    // Change game speed
+    function changeSpeed(speed, save = true) {
+      if (speed === 'fast') {
+        gameSpeed = 300;
+      } else {
+        gameSpeed = 500;
+      }
+      
+      // If game is running, update the interval
+      if (!isPaused && !isGameOver && gameInterval) {
+        clearInterval(gameInterval);
+        let adjustedSpeed = gameSpeed;
+        if (activePowerups.slowFall) {
+          adjustedSpeed *= 1.5;
+        }
+        gameInterval = setInterval(() => {
+          drop();
+        }, adjustedSpeed);
+      }
+      
+      if (save) {
+        localStorage.setItem('tetrisSpeed', speed);
+      }
+    }
+    
+    // Buy powerup
+    function buyPowerup(type) {
+      let cost = 0;
+      let duration = 0;
+      
+      switch(type) {
+        case 'slowFall':
+          cost = 50;
+          duration = 20000; // 20 seconds
+          break;
+        case 'doubleScore':
+          cost = 75;
+          duration = 30000; // 30 seconds
+          break;
+      }
+      
+      if (coins >= cost) {
+        coins -= cost;
+        saveCoins();
+        updateCoinDisplay();
+        
+        // Activate powerup
+        activatePowerup(type, duration);
+      }
+    }
+    
+    // Activate powerup
+    function activatePowerup(type, duration) {
+      // If already active, clear previous timeout
+      if (activePowerups[type]) {
+        clearTimeout(activePowerups[type].timeout);
+      }
+      
+      activePowerups[type] = {
+        active: true,
+        timeout: setTimeout(() => {
+          delete activePowerups[type];
+          updateActivePowerupsDisplay();
+          
+          // Adjust game speed if slow fall ended
+          if (type === 'slowFall' && !isPaused && !isGameOver) {
+            clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+              drop();
+            }, gameSpeed);
+          }
+        }, duration)
+      };
+      
+      // Adjust game speed if slow fall started
+      if (type === 'slowFall' && !isPaused && !isGameOver) {
+        clearInterval(gameInterval);
+        gameInterval = setInterval(() => {
+          drop();
+        }, gameSpeed * 1.5);
+      }
+      
+      updateActivePowerupsDisplay();
+    }
+    
+    // Update active powerups display
+    function updateActivePowerupsDisplay() {
+      const container = document.getElementById('active-powerups');
+      container.innerHTML = '';
+      
+      if (Object.keys(activePowerups).length === 0) return;
+      
+      Object.keys(activePowerups).forEach(powerup => {
+        const element = document.createElement('div');
+        element.className = 'active-powerup';
+        
+        switch(powerup) {
+          case 'slowFall':
+            element.textContent = 'Slow Fall Active';
+            break;
+          case 'doubleScore':
+            element.textContent = 'Double Score Active';
+            break;
+        }
+        
+        container.appendChild(element);
+      });
+    }
+    
+    // Initialize the game
+    function init() {
+      loadSavedData();
+      showScreen('main-menu');
+      
+      // Set up mobile controls
+      document.getElementById('left-btn').addEventListener('click', () => {
+        let newPos = {x: pos.x - 1, y: pos.y};
+        if (!collide(newPos)) pos = newPos;
+        draw();
+      });
+      
+      document.getElementById('right-btn').addEventListener('click', () => {
+        let newPos = {x: pos.x + 1, y: pos.y};
+        if (!collide(newPos)) pos = newPos;
+        draw();
+      });
+      
+      document.getElementById('rotate-btn').addEventListener('click', () => {
+        let newPiece = rotate(piece);
+        if (!collide(pos, newPiece)) piece = newPiece;
+        draw();
+      });
+      
+      document.getElementById('down-btn').addEventListener('click', () => {
+        drop();
+      });
+      
+      // Keyboard controls
+      document.addEventListener('keydown', e => {
+        if (isPaused || isGameOver) return;
+        
+        switch(e.key) {
+          case 'ArrowLeft':
+            let newPosLeft = {x: pos.x - 1, y: pos.y};
+            if (!collide(newPosLeft)) pos = newPosLeft;
+            draw();
+            break;
+          case 'ArrowRight':
+            let newPosRight = {x: pos.x + 1, y: pos.y};
+            if (!collide(newPosRight)) pos = newPosRight;
+            draw();
+            break;
+          case 'ArrowDown':
+            drop();
+            break;
+          case 'ArrowUp':
+            let newPiece = rotate(piece);
+            if (!collide(pos, newPiece)) piece = newPiece;
+            draw();
+            break;
+          case ' ':
+            hardDrop();
+            break;
+          case 'p':
+          case 'P':
+            pauseGame();
+            break;
+        }
+      });
+    }
+    
+    // Initialize when page loads
+    window.onload = init;
+  </script>
+</body>
+</html>
